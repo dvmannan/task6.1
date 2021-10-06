@@ -1,0 +1,101 @@
+const express = require("express")
+const bodyParser = require("body-parser")
+const mongoose = require("mongoose")
+const Task = require("./models/Task.js")
+const app = express();
+
+app.use(bodyParser.urlencoded({extended:true}));
+mongoose.connect("mongodb://localhost:27017/taskDB", {useNewUrlParser: true})
+
+app.route('/tasks')
+.get( (req, res)=>{
+
+    Task.find((err, taskList)=>{
+        if(err) {res.send(err)}
+        else {
+            res.send(taskList)
+        }
+    })
+})
+.post( (req, res)=>{
+    const task = new Task({
+        task_name: req.body.name,
+        address: req.params.add,
+        phone: req.params.number,
+        password: req.params.pass,
+        
+    })
+    task.save((err)=> {
+    if(err){res.send(err)}
+    else res.send ('Successfully new expert added!')
+
+    })
+})
+
+
+.delete( (req, res)=>{
+     Task.deleteMany((err) =>{
+         if(err) {res.send(err)}
+         else {res.send('Successfully deleted all tasks')}
+     })
+ })
+
+
+app.route('/tasks/:tname/:add/:number/:pass')
+.get((req, res)=>{
+    Task.findOne({task_name: req.params.tname},  {address: req.params.add}, {phone: req.params.number}, {password: req.params.pass},(err, foundTask)=>{
+        if(foundTask)(res.send(foundTask))
+        else res.send("No Matched experts found")
+    })
+   
+})
+.put((req,res)=>{
+    Task.update(
+        {task_name: req.params.tname},
+        {address: req.params.add},
+        {phone: req.params.number},
+        {password: req.params.pass},
+        {task_name: req.body.name},
+        {overwrite:true}, 
+        (err)=>{
+            if (err) {res.send(err)}
+            else {res.send('Successfully updated!')}
+        }
+    )
+    })
+
+.delete((req, res)=>{
+    
+    Task.deleteOne(
+        {task_name: req.params.tname},
+        {address: req.params.add},
+        {phone: req.params.number},
+        {password: req.params.pass},
+        {task_name: req.body.name},
+        (err)=>{
+            if(!err) {res.send("Successfully deleted expert")}
+            else res.send(err)
+        }
+    )
+})
+
+.patch((req, res)=>{
+    Task.update(
+        {task_name: req.params.tname},
+        {address: req.params.add},
+        {phone: req.params.number},
+        {password: req.params.pass},
+
+
+        {$set: req.body},
+        (err)=>{
+            if (!err) {res.send('Successfully updated! ')}
+            else res.send(err)
+        }
+    )
+})
+
+
+app.listen(process.env.PORT || 3682, ()=> {
+    console.log("Server started on port")
+})
